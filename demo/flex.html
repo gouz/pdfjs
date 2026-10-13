@@ -1,0 +1,31 @@
+<style>
+  .row { display: flex; gap: 20px; margin-bottom: 10px; }
+  .side { width: 120px; background-color: #eee; }
+  .main { flex: 1; background-color: #def; }
+  .box { background-color: #fdd; }
+</style>
+<p>stretch (défaut) : fonds pleine hauteur</p>
+<div class="row">
+  <div class="side">Sidebar</div>
+  <div class="main">Contenu principal avec du texte assez long pour passer à la ligne plusieurs fois, plusieurs fois, plusieurs fois, plusieurs fois.</div>
+</div>
+<p>align-items: center</p>
+<div class="row" style="align-items:center">
+  <div class="side">Centré</div>
+  <div class="main">Ligne 1<br>Ligne 2<br>Ligne 3<br>Ligne 4</div>
+</div>
+<p>align-items: flex-end</p>
+<div class="row" style="align-items:flex-end">
+  <div class="side">En bas</div>
+  <div class="main">Ligne 1<br>Ligne 2<br>Ligne 3</div>
+</div>
+<p>justify-content: flex-end / center / space-between / space-evenly</p>
+<div class="row" style="justify-content:flex-end"><div class="box">A</div><div class="box">B</div></div>
+<div class="row" style="justify-content:center"><div class="box">A</div><div class="box">B</div></div>
+<div class="row" style="justify-content:space-between"><div class="box">A</div><div class="box">B</div><div class="box">C</div></div>
+<div class="row" style="justify-content:space-evenly"><div class="box">A</div><div class="box">B</div><div class="box">C</div></div>
+<p>space-around / flex 2:1 / flex-wrap / padding + border-radius</p>
+<div class="row" style="justify-content:space-around"><div class="box">A</div><div class="box">B</div><div class="box">C</div></div>
+<div class="row"><div class="box" style="flex:2">flex 2</div><div class="main" style="flex:1">flex 1</div></div>
+<div class="row" style="flex-wrap:wrap"><div class="box" style="width:200px">1</div><div class="box" style="width:200px">2</div><div class="box" style="width:200px">3</div></div>
+<div style="display:flex;padding:10px;border-radius:8px;background-color:#def;border:1px solid #89a">Carte arrondie</div>

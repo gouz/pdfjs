@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, realpathSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Font } from '@react-pdf/renderer';
+import { htmlToPdf, imageSrc, registerFonts, renderers } from './html2pdf.js';
+
+const { div, img } = renderers();
+const styleOf = (el) => Object.assign({}, ...[el.props.style].flat());
+
+// CSS flex defaults to row (Yoga defaults to column); explicit direction wins
+assert.equal(styleOf(div({ style: [{ display: 'flex' }] })).flexDirection, 'row');
+assert.equal(styleOf(div({ style: [{ display: 'flex', flexDirection: 'column' }] })).flexDirection, 'column');
+assert.equal(styleOf(div({ style: [{ display: 'block' }] })).flexDirection, undefined);
+
+// image policy
+const root = realpathSync(mkdtempSync(join(tmpdir(), 'html2pdf-')));
+mkdirSync(join(root, 'site'));
+writeFileSync(join(root, 'site', 'logo.png'), '');
+writeFileSync(join(root, 'secret.png'), '');
+symlinkSync(join(root, 'secret.png'), join(root, 'site', 'link.png'));
+const site = { baseDir: join(root, 'site') };
+
+assert.equal(imageSrc('data:image/png;base64,AA=='), 'data:image/png;base64,AA=='); // always allowed
+assert.equal(imageSrc('logo.png'), null);                                          // no baseDir: no local files
+assert.equal(imageSrc('logo.png', site), join(root, 'site', 'logo.png'));
+assert.equal(imageSrc('./logo.png?v=2', site), join(root, 'site', 'logo.png'));
+assert.equal(imageSrc('../secret.png', site), null);                               // ../ escape
+assert.equal(imageSrc(join(root, 'secret.png'), site), null);                      // absolute path outside
+assert.equal(imageSrc('link.png', site), null);                                    // symlink escape
+assert.equal(imageSrc('missing.png', site), null);
+assert.equal(imageSrc('file:///etc/hosts', site), null);                           // other schemes never
+assert.equal(imageSrc('https://x.test/a.png', site), null);                        // remote off by default
+assert.equal(imageSrc('https://x.test/a.png', { remote: true }), 'https://x.test/a.png');
+assert.equal(img({ style: [], element: { attributes: { src: 'http://x.test/a.png' } } }), null);
+
+// intrinsic width when no size is given, explicit sizes win
+const png1x1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+assert.equal(styleOf(img({ style: [], element: { attributes: { src: png1x1 } } })).width, 1);
+assert.equal(styleOf(img({ style: [], element: { attributes: { src: png1x1, width: '50' } } })).width, 50);
+assert.equal(styleOf(img({ style: [{ width: '30%' }], element: { attributes: { src: png1x1 } } })).width, '30%');
+
+// a family without an italic file reuses its upright files instead of crashing on <i>
+registerFonts({ OneFile: 'one.ttf', WithItalic: [{ src: 'r.ttf' }, { src: 'i.ttf', fontStyle: 'italic' }] });
+const styles = (f) => Font.getRegisteredFonts()[f].sources.map((s) => `${s.src}:${s.fontStyle}`).sort();
+assert.deepEqual(styles('OneFile'), ['one.ttf:italic', 'one.ttf:normal']);
+assert.deepEqual(styles('WithItalic'), ['i.ttf:italic', 'r.ttf:normal']);
+
+// end to end, no output -> Buffer; header/footer page numbers
+const pdf = await htmlToPdf('<div style="display:flex;justify-content:space-between"><p>a</p><p>b</p></div>',
+  { size: 'A5', landscape: true, margin: { top: 60 }, footer: '<p>{page}/{pages}</p>', meta: { title: 'T' } });
+assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
+assert.match(pdf.toString('latin1'), /\(T\)/);
+console.log('ok');

@@ -1,0 +1,22 @@
+{
+  "name": "pdfjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "html2pdf.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bin": {
+    "html2pdf": "html2pdf.js"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
+    "image-size": "^2.0.4",
+    "react": "^19.3.0",
+    "react-pdf-html": "^2.1.5"
+  }
+}

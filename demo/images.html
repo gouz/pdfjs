@@ -1,0 +1,25 @@
+<style>
+  .row { display: flex; gap: 20px; align-items: center; }
+  .avatar { width: 60px; height: 60px; border-radius: 30px; }
+</style>
+<h2>Images</h2>
+<div class="row">
+  <img src="logo.png" width="100">
+  <p>Locale, relative au fichier HTML, width="100"</p>
+</div>
+<div class="row">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAA0UlEQVR4nO3WwQ0DMQgEwKsk79SUSq7EVJI2Lt+TdYaFBWxLXokvHu3D4jjIvD7fSxp2fzhoGJiFpUKjcWFI5BEtaVAG5cGG4J7yPn/iWKChOA2mQd1IDWeFSVAzMBtHIatwbmQlDkHC7WXhWqTY4oj2TC2Oak9rcQ3gaJyK3MAN3MANTAbO8BeKuKWBFch7YOB059b0B+sSJ38l0oWrQlK4HrBFeqBteu+oQAsSgT6FwmnIHhSJtNOEQ5AoFtnhwlmhnqFhmchQXCQ0DeYFs/v/maUU+BdGZ4QAAAAASUVORK5CYII=">
+  <p>data: URI inline</p>
+</div>
+<div class="row">
+  <img class="avatar" src="logo.png">
+  <p>CSS : 60×60, border-radius</p>
+</div>
+<div class="row">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png" style="width: 120px">
+  <p>Distante (seulement avec --remote-images)</p>
+</div>
+<div class="row">
+  <img src="../package.json"><img src="/etc/hosts"><img src="file:///etc/hosts">
+  <p>Bloquées : hors du dossier, chemin absolu, file://</p>
+</div>
