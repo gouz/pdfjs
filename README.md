@@ -106,10 +106,16 @@ Formats : PNG et JPEG. Les SVG doivent être écrits directement dans le HTML (`
 
 ## Exemples
 
+| Source | Rendu | |
+|---|---|---|
+| [`demo/example.html`](demo/example.html) | [`demo/example.pdf`](demo/example.pdf) | facture simple |
+| [`demo/flex.html`](demo/flex.html) | [`demo/flex.pdf`](demo/flex.pdf) | flexbox |
+| [`demo/images.html`](demo/images.html) | [`demo/images.pdf`](demo/images.pdf) | images (l'image distante est bloquée par défaut, ajouter `--remote-images`) |
+
+Pour régénérer les rendus :
+
 ```bash
-node html2pdf.js demo/example.html example.pdf   # facture simple
-node html2pdf.js demo/flex.html flex.pdf         # démonstration flexbox
-node html2pdf.js demo/images.html images.pdf     # images (ajouter --remote-images pour l'image distante)
+npm run demo
 ```
 
 ## Tests

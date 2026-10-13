@@ -4,7 +4,8 @@
   "description": "",
   "main": "html2pdf.js",
   "scripts": {
-    "test": "node test.js"
+    "test": "node test.js",
+    "demo": "for f in demo/*.html; do node html2pdf.js \"$f\" \"${f%.html}.pdf\"; done"
   },
   "keywords": [],
   "author": "",
