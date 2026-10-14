@@ -1,19 +1,32 @@
 {
-  "name": "pdfjs",
+  "name": "@gouz/pdfjs",
   "version": "1.0.0",
   "description": "Génère des PDF depuis du HTML/CSS en Node.js, sans navigateur",
-  "main": "pdfjs.ts",
   "type": "module",
-  "bin": {
-    "pdfjs": "pdfjs.ts"
+  "main": "dist/pdfjs.js",
+  "types": "dist/pdfjs.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/pdfjs.d.ts",
+      "default": "./dist/pdfjs.js"
+    }
   },
+  "bin": {
+    "pdfjs": "dist/pdfjs.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "node test.ts",
     "typecheck": "tsc",
     "demo": "for f in demo/*.html; do node pdfjs.ts \"$f\" \"${f%.html}.pdf\"; done",
     "bench:server": "node bench/server.ts",
     "bench": "k6 run bench/k6.ts",
-    "bench:sweep": "(sh bench/sweep.sh && RUNTIME=bun sh bench/sweep.sh | tail -n +2) > bench/results.csv && node bench/chart.ts"
+    "bench:sweep": "(sh bench/sweep.sh && RUNTIME=bun sh bench/sweep.sh | tail -n +2) > bench/results.csv && node bench/chart.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run typecheck && npm test",
+    "prepack": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -44,5 +57,8 @@
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "typescript": "^7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

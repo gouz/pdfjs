@@ -116,6 +116,7 @@ export function registerFonts(fonts: Fonts) {
 
 export function htmlToPdf(html: string, opts: PdfOptions & { output: string }): Promise<void>;
 export function htmlToPdf(html: string, opts?: PdfOptions & { output?: undefined }): Promise<Buffer>;
+export function htmlToPdf(html: string, opts?: PdfOptions): Promise<Buffer | void>;
 export function htmlToPdf(html: string, {
   output, size = 'A4', landscape = false, margin = 40, font = 'Helvetica', fontSize = 12,
   fonts, header, footer, meta = {}, images,
@@ -142,7 +143,8 @@ export function htmlToPdf(html: string, {
   return output ? renderToFile(doc, output).then(() => {}) : renderToBuffer(doc);
 }
 
-if (import.meta.filename === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
+// realpath: once installed, argv[1] is the node_modules/.bin/pdfjs symlink
+if (process.argv[1] && realpathSync(process.argv[1]) === import.meta.filename) {
   const { values: v, positionals: [input, output = 'out.pdf'] } = parseArgs({
     allowPositionals: true,
     options: {

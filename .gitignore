@@ -2,3 +2,4 @@ node_modules/
 *.pdf
 .DS_Store
 !demo/*.pdf
+dist/

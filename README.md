@@ -7,15 +7,15 @@ La mise en page est faite par [Yoga](https://yogalayout.dev) via [`@react-pdf/re
 ## Installation
 
 ```bash
-npm install
+npm install @gouz/pdfjs
 ```
 
-Node.js 22.18 ou plus récent (exécute le TypeScript directement, sans build), ou Bun.
+Node.js 22.18 ou plus récent, ou Bun. Types TypeScript inclus.
 
 ## Ligne de commande
 
 ```bash
-node pdfjs.ts facture.html facture.pdf
+npx pdfjs facture.html facture.pdf
 ```
 
 | Option | Exemple | |
@@ -36,7 +36,7 @@ Les images locales sont autorisées depuis le dossier du fichier HTML (et ses so
 ## API
 
 ```ts
-import { htmlToPdf } from './pdfjs.ts';
+import { htmlToPdf } from '@gouz/pdfjs';
 
 // Écrit un fichier
 await htmlToPdf('<h1>Bonjour</h1>', { output: 'bonjour.pdf' });
@@ -149,11 +149,15 @@ npm run bench:sweep                              # balayage 1 → 200 VUs, Node 
                                                  # → bench/results.csv, bench/chart.svg, bench/memory.svg
 ```
 
-## Tests
+## Développement
 
 ```bash
+npm install
+node pdfjs.ts demo/flex.html flex.pdf   # Node et Bun exécutent le TypeScript directement
 npm test
-npm run typecheck   # tsc, vérification des types uniquement
+npm run typecheck   # tsc, vérification des types
+npm run build       # tsc → dist/ (JS + .d.ts), lancé automatiquement par npm pack / npm publish
+npm publish         # vérifie les types et les tests, build, puis publie @gouz/pdfjs
 ```
 
 ## Licence
