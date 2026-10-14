@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" width="640" font-family="-apple-system, Segoe UI, Helvetica, sans-serif" font-size="12">
+<style>
+  .bg{fill:#fcfcfb} .ink{fill:#0b0b0b} .muted{fill:#898781} .grid{stroke:#e1e0d9} .axis{stroke:#c3c2b7}
+  .s1{stroke:#2a78d6;fill:#2a78d6} .s2{stroke:#eb6834;fill:#eb6834}
+  @media (prefers-color-scheme: dark){
+    .bg{fill:#1a1a19} .ink{fill:#f0efec} .grid{stroke:#2c2c2a} .axis{stroke:#383835}
+    .s1{stroke:#3987e5;fill:#3987e5} .s2{stroke:#d95926;fill:#d95926}
+  }
+</style>
+<rect class="bg" width="640" height="340" rx="8"/>
+<text class="ink" x="56" y="22" font-size="14" font-weight="600">Débit (PDF/s) selon le nombre d'utilisateurs simultanés</text>
+<g transform="translate(56,34)"><line class="s1" x1="0" x2="14" y1="0" y2="0" stroke-width="2"/><circle class="s1" cx="7" r="4"/><text class="muted" x="20" y="4">1 worker</text></g><g transform="translate(166,34)"><line class="s2" x1="0" x2="14" y1="0" y2="0" stroke-width="2"/><circle class="s2" cx="7" r="4"/><text class="muted" x="20" y="4">8 workers</text></g>
+<line class="axis" x1="56" x2="528" y1="292" y2="292"/><text class="muted" x="48" y="296" text-anchor="end">0</text>
+<line class="grid" x1="56" x2="528" y1="243.20000000000002" y2="243.20000000000002"/><text class="muted" x="48" y="247.20000000000002" text-anchor="end">250</text>
+<line class="grid" x1="56" x2="528" y1="194.4" y2="194.4"/><text class="muted" x="48" y="198.4" text-anchor="end">500</text>
+<line class="grid" x1="56" x2="528" y1="145.60000000000002" y2="145.60000000000002"/><text class="muted" x="48" y="149.60000000000002" text-anchor="end">750</text>
+<line class="grid" x1="56" x2="528" y1="96.79999999999998" y2="96.79999999999998"/><text class="muted" x="48" y="100.79999999999998" text-anchor="end">1000</text>
+<line class="grid" x1="56" x2="528" y1="48" y2="48"/><text class="muted" x="48" y="52" text-anchor="end">1250</text>
+<text class="muted" x="56" y="310" text-anchor="middle">1</text><text class="muted" x="134.66666666666669" y="310" text-anchor="middle">5</text><text class="muted" x="213.33333333333334" y="310" text-anchor="middle">10</text><text class="muted" x="292" y="310" text-anchor="middle">25</text><text class="muted" x="370.6666666666667" y="310" text-anchor="middle">50</text><text class="muted" x="449.3333333333333" y="310" text-anchor="middle">100</text><text class="muted" x="528" y="310" text-anchor="middle">200</text>
+<text class="muted" x="292" y="332" text-anchor="middle">utilisateurs virtuels k6 (VUs)</text>
+<polyline class="s1" style="fill:none" stroke-width="2" stroke-linejoin="round" points="56,249.056 134.66666666666669,244.3712 213.33333333333334,243.5904 292,243.7856 370.6666666666667,242.22400000000002 449.3333333333333,241.24800000000002 528,240.8576"/>
+<circle class="s1" cx="56" cy="249.056" r="4"><title>1 worker(s), 1 VUs : 220 PDF/s, p95 6 ms</title></circle><circle class="s1" cx="134.66666666666669" cy="244.3712" r="4"><title>1 worker(s), 5 VUs : 244 PDF/s, p95 49 ms</title></circle><circle class="s1" cx="213.33333333333334" cy="243.5904" r="4"><title>1 worker(s), 10 VUs : 248 PDF/s, p95 103 ms</title></circle><circle class="s1" cx="292" cy="243.7856" r="4"><title>1 worker(s), 25 VUs : 247 PDF/s, p95 265 ms</title></circle><circle class="s1" cx="370.6666666666667" cy="242.22400000000002" r="4"><title>1 worker(s), 50 VUs : 255 PDF/s, p95 521 ms</title></circle><circle class="s1" cx="449.3333333333333" cy="241.24800000000002" r="4"><title>1 worker(s), 100 VUs : 260 PDF/s, p95 1006 ms</title></circle><circle class="s1" cx="528" cy="240.8576" r="4"><title>1 worker(s), 200 VUs : 262 PDF/s, p95 1750 ms</title></circle>
+<text class="ink" x="538" y="244.8576">1 worker · 262/s</text>
+<polyline class="s2" style="fill:none" stroke-width="2" stroke-linejoin="round" points="56,248.6656 134.66666666666669,123.34719999999999 213.33333333333334,91.5296 292,94.45760000000001 370.6666666666667,93.09119999999999 449.3333333333333,120.8096 528,113.39200000000001"/>
+<circle class="s2" cx="56" cy="248.6656" r="4"><title>8 worker(s), 1 VUs : 222 PDF/s, p95 6 ms</title></circle><circle class="s2" cx="134.66666666666669" cy="123.34719999999999" r="4"><title>8 worker(s), 5 VUs : 864 PDF/s, p95 9 ms</title></circle><circle class="s2" cx="213.33333333333334" cy="91.5296" r="4"><title>8 worker(s), 10 VUs : 1027 PDF/s, p95 23 ms</title></circle><circle class="s2" cx="292" cy="94.45760000000001" r="4"><title>8 worker(s), 25 VUs : 1012 PDF/s, p95 62 ms</title></circle><circle class="s2" cx="370.6666666666667" cy="93.09119999999999" r="4"><title>8 worker(s), 50 VUs : 1019 PDF/s, p95 139 ms</title></circle><circle class="s2" cx="449.3333333333333" cy="120.8096" r="4"><title>8 worker(s), 100 VUs : 877 PDF/s, p95 338 ms</title></circle><circle class="s2" cx="528" cy="113.39200000000001" r="4"><title>8 worker(s), 200 VUs : 915 PDF/s, p95 620 ms</title></circle>
+<text class="ink" x="538" y="117.39200000000001">8 workers · 915/s</text>
+</svg>

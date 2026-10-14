@@ -118,6 +118,30 @@ Pour régénérer les rendus :
 npm run demo
 ```
 
+## Performances
+
+Mesuré avec [k6](https://k6.io) via un petit serveur HTTP (`bench/server.js` : POST du HTML, réponse en PDF), sur les trois documents de `demo/` en alternance. Machine : Apple Silicon 8 cœurs (6 performance + 2 efficacité), Node 26, k6 sur la même machine.
+
+![Débit selon le nombre d'utilisateurs simultanés : 1 worker plafonne vers 250 PDF/s, 8 workers vers 1 000 PDF/s](bench/chart.svg)
+
+| Workers | Débit max | p95 à 10 VUs | p95 à 200 VUs | Erreurs |
+|---|---|---|---|---|
+| 1 | 262 PDF/s | 103 ms | 1 750 ms | 0 % |
+| 8 | 1 027 PDF/s | 23 ms | 620 ms | 0 % |
+
+- Le rendu est **CPU-bound** : un processus Node plafonne vers 250 PDF/s quelle que soit la charge, au-delà la latence monte. Pour monter en charge, lancer un process par cœur (`WORKERS=8`).
+- Avec 8 workers le débit sature dès ~10 utilisateurs simultanés (k6 consomme lui-même une partie du CPU).
+- Coût par document : ~11 ms pour `example` et `flex`, ~77 ms pour `images` (PNG à lire et décoder).
+
+Pour reproduire :
+
+```bash
+brew install k6
+WORKERS=8 PORT=3456 npm run bench:server   # serveur seul
+k6 run -e URL=http://localhost:3456 bench/k6.js   # montée à 10 VUs, latence par document
+npm run bench:sweep                         # balayage 1 → 200 VUs, 1 worker et 1 par cœur → bench/results.csv + bench/chart.svg
+```
+
 ## Tests
 
 ```bash
