@@ -46,6 +46,14 @@ export interface PdfOptions {
   images?: ImageOptions;
 }
 
+/** Replace CSS values that crash react-pdf (e.g. border-width keywords). */
+const borderWidths: Record<string, string> = { thin: '1px', medium: '3px', thick: '5px' };
+export const sanitizeCss = (html: string) =>
+  html.replace(
+    /(border(?:-(?:top|right|bottom|left))?(?:-width)?\s*:\s*)(thin|medium|thick)\b/gi,
+    (_, prop: string, kw: string) => prop + borderWidths[kw.toLowerCase()],
+  );
+
 const merge = (style: unknown): Style => Object.assign({}, ...[style].flat());
 
 // CSS display:flex defaults to row, Yoga defaults to column.
@@ -132,13 +140,13 @@ export function htmlToPdf(html: string, {
     style: { position: 'absolute', [edge]: 0, left: m.left, right: m.right, height: m[edge], justifyContent: 'center' },
     // react-pdf passes totalPages at runtime, its View typings only declare pageNumber
     render: ({ pageNumber, totalPages }: { pageNumber: number; totalPages?: number }) => h(Html, { renderers: r, style: text,
-      children: content.replaceAll('{page}', String(pageNumber)).replaceAll('{pages}', String(totalPages)) }),
+      children: sanitizeCss(content.replaceAll('{page}', String(pageNumber)).replaceAll('{pages}', String(totalPages))) }),
   });
 
   const doc = h(Document, meta,
     h(Page, { size, orientation: landscape ? 'landscape' : 'portrait', style: { ...text, paddingTop: m.top, paddingRight: m.right, paddingBottom: m.bottom, paddingLeft: m.left } },
       band(header, 'top'),
-      h(Html, { renderers: r, style: text, children: html }),
+      h(Html, { renderers: r, style: text, children: sanitizeCss(html) }),
       band(footer, 'bottom')));
   return output ? renderToFile(doc, output).then(() => {}) : renderToBuffer(doc);
 }
