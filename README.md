@@ -1,4 +1,4 @@
-# html2pdf
+# pdfjs
 
 Génère des PDF depuis du HTML/CSS en Node.js, **sans navigateur** (ni Chrome ni Puppeteer).
 
@@ -10,12 +10,12 @@ La mise en page est faite par [Yoga](https://yogalayout.dev) via [`@react-pdf/re
 npm install
 ```
 
-Node.js 20 ou plus récent.
+Node.js 22.18 ou plus récent (exécute le TypeScript directement, sans build), ou Bun.
 
 ## Ligne de commande
 
 ```bash
-node html2pdf.js facture.html facture.pdf
+node pdfjs.ts facture.html facture.pdf
 ```
 
 | Option | Exemple | |
@@ -35,8 +35,8 @@ Les images locales sont autorisées depuis le dossier du fichier HTML (et ses so
 
 ## API
 
-```js
-import { htmlToPdf } from './html2pdf.js';
+```ts
+import { htmlToPdf } from './pdfjs.ts';
 
 // Écrit un fichier
 await htmlToPdf('<h1>Bonjour</h1>', { output: 'bonjour.pdf' });
@@ -47,7 +47,7 @@ const pdf = await htmlToPdf(html);
 
 Toutes les options :
 
-```js
+```ts
 await htmlToPdf(html, {
   output: 'rapport.pdf',          // sinon : Buffer
   size: 'A4',                     // 'A3', 'LETTER'… ou [largeur, hauteur] en pt
@@ -120,7 +120,7 @@ npm run demo
 
 ## Performances
 
-Mesuré avec [k6](https://k6.io) via un petit serveur HTTP (`bench/server.js` : POST du HTML, réponse en PDF), sur les trois documents de `demo/` en alternance. Machine : Apple Silicon 8 cœurs (6 performance + 2 efficacité), Node 26.11, Bun 1.4, k6 sur la même machine. Chaque palier dure 15 s ; la mémoire est le pic de RSS du serveur (tous ses process) pendant le palier.
+Mesuré avec [k6](https://k6.io) via un petit serveur HTTP (`bench/server.ts` : POST du HTML, réponse en PDF), sur les trois documents de `demo/` en alternance. Machine : Apple Silicon 8 cœurs (6 performance + 2 efficacité), Node 26.11, Bun 1.4, k6 sur la même machine. Chaque palier dure 15 s ; la mémoire est le pic de RSS du serveur (tous ses process) pendant le palier.
 
 ![Débit selon le nombre d'utilisateurs simultanés : Node × 8 monte à ~1 100 PDF/s, les autres configurations plafonnent entre 250 et 330 PDF/s](bench/chart.svg)
 
@@ -143,8 +143,8 @@ Pour reproduire :
 
 ```bash
 brew install k6
-WORKERS=8 PORT=3456 npm run bench:server         # serveur seul (Node ; `bun bench/server.js` pour Bun)
-k6 run -e URL=http://localhost:3456 bench/k6.js  # montée à 10 VUs, latence par document
+WORKERS=8 PORT=3456 npm run bench:server         # serveur seul (Node ; `bun bench/server.ts` pour Bun)
+k6 run -e URL=http://localhost:3456 bench/k6.ts  # montée à 10 VUs, latence par document
 npm run bench:sweep                              # balayage 1 → 200 VUs, Node et Bun, 1 worker et 1 par cœur
                                                  # → bench/results.csv, bench/chart.svg, bench/memory.svg
 ```
@@ -153,6 +153,7 @@ npm run bench:sweep                              # balayage 1 → 200 VUs, Node 
 
 ```bash
 npm test
+npm run typecheck   # tsc, vérification des types uniquement
 ```
 
 ## Licence

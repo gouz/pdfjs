@@ -1,26 +1,48 @@
 {
   "name": "pdfjs",
   "version": "1.0.0",
-  "description": "",
-  "main": "html2pdf.js",
-  "scripts": {
-    "test": "node test.js",
-    "demo": "for f in demo/*.html; do node html2pdf.js \"$f\" \"${f%.html}.pdf\"; done",
-    "bench:server": "node bench/server.js",
-    "bench": "k6 run bench/k6.js",
-    "bench:sweep": "(sh bench/sweep.sh && RUNTIME=bun sh bench/sweep.sh | tail -n +2) > bench/results.csv && node bench/chart.js"
-  },
-  "keywords": [],
-  "author": "Sylvain Gougouzian",
-  "license": "MIT",
+  "description": "Génère des PDF depuis du HTML/CSS en Node.js, sans navigateur",
+  "main": "pdfjs.ts",
   "type": "module",
   "bin": {
-    "html2pdf": "html2pdf.js"
+    "pdfjs": "pdfjs.ts"
   },
+  "scripts": {
+    "test": "node test.ts",
+    "typecheck": "tsc",
+    "demo": "for f in demo/*.html; do node pdfjs.ts \"$f\" \"${f%.html}.pdf\"; done",
+    "bench:server": "node bench/server.ts",
+    "bench": "k6 run bench/k6.ts",
+    "bench:sweep": "(sh bench/sweep.sh && RUNTIME=bun sh bench/sweep.sh | tail -n +2) > bench/results.csv && node bench/chart.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gouz/pdfjs.git"
+  },
+  "homepage": "https://github.com/gouz/pdfjs#readme",
+  "bugs": {
+    "url": "https://github.com/gouz/pdfjs/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "keywords": [
+    "pdf",
+    "html",
+    "css",
+    "react-pdf"
+  ],
+  "author": "Sylvain Gougouzian",
+  "license": "MIT",
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
     "image-size": "^2.0.4",
     "react": "^19.3.0",
     "react-pdf-html": "^2.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
   }
 }

@@ -2,7 +2,7 @@
 // WORKERS=n forks n processes sharing the port (rendering is CPU-bound, one core per process).
 import cluster from 'node:cluster';
 import { createServer } from 'node:http';
-import { htmlToPdf } from '../html2pdf.js';
+import { htmlToPdf } from '../pdfjs.ts';
 
 const workers = Number(process.env.WORKERS) || 1;
 

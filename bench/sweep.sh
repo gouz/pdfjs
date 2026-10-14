@@ -8,11 +8,11 @@ RUNTIME=${RUNTIME:-node}
 rss_mb() { ps -A -o rss=,ppid=,pid= | awk -v p=$pid '$2 == p || $3 == p { s += $1 } END { printf "%d", s / 1024 }'; }
 echo "runtime,workers,vus,req_s,p95_ms,fail_rate,peak_rss_mb"
 for w in ${@:-1 $(node -p 'os.availableParallelism()')}; do
-  WORKERS=$w PORT=$PORT $RUNTIME bench/server.js 2>/dev/null & pid=$!
+  WORKERS=$w PORT=$PORT $RUNTIME bench/server.ts 2>/dev/null & pid=$!
   sleep 2
   for v in 1 5 10 25 50 100 200; do
     k6 run -q --vus $v --duration 15s -e URL=http://localhost:$PORT \
-      --summary-export /tmp/k6-sweep.json bench/k6.js >/dev/null 2>&1 & k6pid=$!
+      --summary-export /tmp/k6-sweep.json bench/k6.ts >/dev/null 2>&1 & k6pid=$!
     peak=0
     while kill -0 $k6pid 2>/dev/null; do
       m=$(rss_mb); [ "$m" -gt "$peak" ] && peak=$m

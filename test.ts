@@ -3,18 +3,19 @@ import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, realpathSync } from
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Font } from '@react-pdf/renderer';
-import { htmlToPdf, imageSrc, registerFonts, renderers } from './html2pdf.js';
+import { htmlToPdf, imageSrc, registerFonts, renderers } from './pdfjs.ts';
 
 const { div, img } = renderers();
-const styleOf = (el) => Object.assign({}, ...[el.props.style].flat());
+const el = (attributes: Record<string, string>) => ({ attributes });
+const styleOf = (node: any) => Object.assign({}, ...[node.props.style].flat());
 
 // CSS flex defaults to row (Yoga defaults to column); explicit direction wins
-assert.equal(styleOf(div({ style: [{ display: 'flex' }] })).flexDirection, 'row');
-assert.equal(styleOf(div({ style: [{ display: 'flex', flexDirection: 'column' }] })).flexDirection, 'column');
-assert.equal(styleOf(div({ style: [{ display: 'block' }] })).flexDirection, undefined);
+assert.equal(styleOf(div({ style: [{ display: 'flex' }], element: el({}) })).flexDirection, 'row');
+assert.equal(styleOf(div({ style: [{ display: 'flex', flexDirection: 'column' }], element: el({}) })).flexDirection, 'column');
+assert.equal(styleOf(div({ style: [{ display: 'none' }], element: el({}) })).flexDirection, undefined);
 
 // image policy
-const root = realpathSync(mkdtempSync(join(tmpdir(), 'html2pdf-')));
+const root = realpathSync(mkdtempSync(join(tmpdir(), 'pdfjs-')));
 mkdirSync(join(root, 'site'));
 writeFileSync(join(root, 'site', 'logo.png'), '');
 writeFileSync(join(root, 'secret.png'), '');
@@ -32,17 +33,17 @@ assert.equal(imageSrc('missing.png', site), null);
 assert.equal(imageSrc('file:///etc/hosts', site), null);                           // other schemes never
 assert.equal(imageSrc('https://x.test/a.png', site), null);                        // remote off by default
 assert.equal(imageSrc('https://x.test/a.png', { remote: true }), 'https://x.test/a.png');
-assert.equal(img({ style: [], element: { attributes: { src: 'http://x.test/a.png' } } }), null);
+assert.equal(img({ style: [], element: el({ src: 'http://x.test/a.png' }) }), null);
 
 // intrinsic width when no size is given, explicit sizes win
 const png1x1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-assert.equal(styleOf(img({ style: [], element: { attributes: { src: png1x1 } } })).width, 1);
-assert.equal(styleOf(img({ style: [], element: { attributes: { src: png1x1, width: '50' } } })).width, 50);
-assert.equal(styleOf(img({ style: [{ width: '30%' }], element: { attributes: { src: png1x1 } } })).width, '30%');
+assert.equal(styleOf(img({ style: [], element: el({ src: png1x1 }) })).width, 1);
+assert.equal(styleOf(img({ style: [], element: el({ src: png1x1, width: '50' }) })).width, 50);
+assert.equal(styleOf(img({ style: [{ width: '30%' }], element: el({ src: png1x1 }) })).width, '30%');
 
 // a family without an italic file reuses its upright files instead of crashing on <i>
 registerFonts({ OneFile: 'one.ttf', WithItalic: [{ src: 'r.ttf' }, { src: 'i.ttf', fontStyle: 'italic' }] });
-const styles = (f) => Font.getRegisteredFonts()[f].sources.map((s) => `${s.src}:${s.fontStyle}`).sort();
+const styles = (f: string) => Font.getRegisteredFonts()[f].sources.map((s: any) => `${s.src}:${s.fontStyle}`).sort();
 assert.deepEqual(styles('OneFile'), ['one.ttf:italic', 'one.ttf:normal']);
 assert.deepEqual(styles('WithItalic'), ['i.ttf:italic', 'r.ttf:normal']);
 

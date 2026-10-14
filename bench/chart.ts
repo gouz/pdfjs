@@ -2,24 +2,24 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const dir = new URL('.', import.meta.url).pathname;
+type Row = [label: string, workers: number, vus: number, reqS: number, p95Ms: number, failRate: number, peakRssMb: number];
 const rows = readFileSync(dir + 'results.csv', 'utf8').trim().split('\n').slice(1)
-  .map((l) => l.split(',')).map(([rt, ...n]) => [`${rt === 'bun' ? 'Bun' : 'Node'} × ${n[0]}`, ...n.map(Number)]);
-// row: [label, workers, vus, req_s, p95_ms, fail_rate, peak_rss_mb]
+  .map((l) => l.split(',')).map(([rt, ...n]) => [`${rt === 'bun' ? 'Bun' : 'Node'} × ${n[0]}`, ...n.map(Number)] as Row);
 const vus = [...new Set(rows.map((r) => r[2]))];
 const labels = [...new Set(rows.map((r) => r[0]))];
 const COLORS = [['#2a78d6', '#3987e5'], ['#eb6834', '#d95926'], ['#1baf7a', '#199e70'], ['#eda100', '#c98500']];
 
-function chart(file, title, col, unit) {
+function chart(file: string, title: string, col: 3 | 6, unit: string) {
   const series = labels.map((label, i) => ({ label, cls: `s${i + 1}`, pts: rows.filter((r) => r[0] === label).map((r) => ({ v: r[2], val: r[col] })) }));
   const W = 680, H = 360, L = 56, R = 150, T = 56, B = 48;
   const top = Math.max(...rows.map((r) => r[col]));
-  const step = [50, 100, 250, 500, 1000, 2500].find((s) => top / s <= 5);
+  const step = [50, 100, 250, 500, 1000, 2500].find((s) => top / s <= 5) ?? 5000;
   const max = Math.ceil(top / step) * step;
-  const x = (v) => L + (vus.indexOf(v) * (W - L - R)) / (vus.length - 1);
-  const y = (val) => T + (H - T - B) * (1 - val / max);
+  const x = (v: number) => L + (vus.indexOf(v) * (W - L - R)) / (vus.length - 1);
+  const y = (val: number) => T + (H - T - B) * (1 - val / max);
   const ticks = Array.from({ length: max / step + 1 }, (_, i) => i * step);
   // end-of-line labels: sort by height and push apart so they never overlap
-  const ends = series.map((s) => ({ s, ly: y(s.pts.at(-1).val) + 4 })).sort((a, b) => a.ly - b.ly);
+  const ends = series.map((s) => ({ s, ly: y(s.pts.at(-1)!.val) + 4 })).sort((a, b) => a.ly - b.ly);
   ends.forEach((e, i) => { if (i) e.ly = Math.max(e.ly, ends[i - 1].ly + 15); });
 
   writeFileSync(dir + file, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" font-family="-apple-system, Segoe UI, Helvetica, sans-serif" font-size="12">
@@ -39,7 +39,7 @@ ${vus.map((v) => `<text class="muted" x="${x(v)}" y="${H - B + 18}" text-anchor=
 <text class="muted" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">utilisateurs virtuels k6 (VUs)</text>
 ${series.map((s) => `<polyline class="${s.cls}" style="fill:none" stroke-width="2" stroke-linejoin="round" points="${s.pts.map((p) => `${x(p.v)},${y(p.val)}`).join(' ')}"/>
 ${s.pts.map((p) => `<circle class="${s.cls}" cx="${x(p.v)}" cy="${y(p.val)}" r="4"><title>${s.label}, ${p.v} VUs : ${p.val} ${unit}</title></circle>`).join('')}`).join('\n')}
-${ends.map(({ s, ly }) => `<text class="ink" x="${W - R + 10}" y="${ly}">${s.label} · ${s.pts.at(-1).val} ${unit}</text>`).join('\n')}
+${ends.map(({ s, ly }) => `<text class="ink" x="${W - R + 10}" y="${ly}">${s.label} · ${s.pts.at(-1)!.val} ${unit}</text>`).join('\n')}
 </svg>
 `);
 }
