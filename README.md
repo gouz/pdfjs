@@ -120,23 +120,25 @@ npm run demo
 
 ## Performances
 
-Mesuré avec [k6](https://k6.io) via un petit serveur HTTP (`bench/server.ts` : POST du HTML, réponse en PDF), sur les trois documents de `demo/` en alternance. Machine : Apple Silicon 8 cœurs (6 performance + 2 efficacité), Node 26.11, Bun 1.4, k6 sur la même machine. Chaque palier dure 15 s ; la mémoire est le pic de RSS du serveur (tous ses process) pendant le palier.
+Mesuré avec [k6](https://k6.io) via un petit serveur HTTP (`bench/server.ts` : POST du HTML, réponse en PDF), sur les trois documents de `demo/` en alternance. Machine : Apple Silicon 8 cœurs (6 performance + 2 efficacité), Node 26.11, Bun 1.4, k6 sur la même machine. `NODE_ENV=production`. Chaque palier dure 15 s ; la mémoire est le pic de RSS du serveur (tous ses process) pendant le palier.
 
-![Débit selon le nombre d'utilisateurs simultanés : Node × 8 monte à ~1 100 PDF/s, les autres configurations plafonnent entre 250 et 330 PDF/s](bench/chart.svg)
+![Débit selon le nombre d'utilisateurs simultanés : Node × 8 monte à ~1 250 PDF/s, les autres configurations plafonnent entre 300 et 330 PDF/s](bench/chart.svg)
 
-![Mémoire max selon le nombre d'utilisateurs simultanés : de ~320 Mo (Node × 1 au repos) à ~3,1 Go (Node × 8 à 200 VUs)](bench/memory.svg)
+![Mémoire max selon le nombre d'utilisateurs simultanés : de ~350 Mo (Node × 1 au repos) à ~2,8 Go (Node × 8 à 200 VUs)](bench/memory.svg)
 
 | Runtime × workers | Débit max | p95 à 10 VUs | p95 à 200 VUs | Mémoire à 1 VU | Mémoire à 200 VUs | Erreurs |
 |---|---|---|---|---|---|---|
-| Node × 1 | 259 PDF/s | 104 ms | 1 799 ms | 323 Mo | 579 Mo | 0 % |
-| Node × 8 | 1 185 PDF/s | 23 ms | 460 ms | 1 075 Mo | 3 112 Mo | 0 % |
-| Bun × 1 | 328 PDF/s | 77 ms | 1 385 ms | 364 Mo | 984 Mo | 0 % |
-| Bun × 8 | 324 PDF/s | 78 ms | 1 772 ms | 1 069 Mo | 1 519 Mo | 0 % |
+| Node × 1 | 300 PDF/s | 48 ms | 842 ms | 348 Mo | 497 Mo | 0 % |
+| Node × 8 | 1 281 PDF/s | 20 ms | 303 ms | 1 326 Mo | 2 846 Mo | 0 % |
+| Bun × 1 | 327 PDF/s | 41 ms | 801 ms | 361 Mo | 666 Mo | 0 % |
+| Bun × 8 | 326 PDF/s | 42 ms | 760 ms | 1 081 Mo | 1 344 Mo | 0 % |
 
 - Le rendu est **CPU-bound** : un seul process plafonne quelle que soit la charge, au-delà seule la latence monte.
-- **Bun est ~25 % plus rapide que Node sur un process**, mais sa mémoire grimpe plus vite avec la charge (984 Mo contre 579 Mo à 200 VUs).
+- **Les rendus passent un par un** (file d'attente interne) : en parallèle ils n'iraient pas plus vite et garderaient chacun leur document en mémoire. Les requêtes en surplus attendent leur tour, d'où la latence qui monte.
+- **Lancer avec `NODE_ENV=production`** : sans, React tourne en mode développement, plus lent et plus gourmand.
+- **Bun est ~10 % plus rapide que Node sur un process**, mais sa mémoire grimpe plus vite avec la charge (666 Mo contre 497 Mo à 200 VUs).
 - **Le mode cluster ne sert qu'avec Node sur macOS** : Bun lance bien les 8 workers mais ne répartit les connexions entre eux que sous Linux, donc Bun × 8 n'apporte rien ici. À re-mesurer sur Linux.
-- Node × 8 multiplie le débit par ~4,5, pour ~380 Mo par worker sous forte charge.
+- Node × 8 multiplie le débit par ~4,3, pour ~350 Mo par worker sous forte charge.
 - Coût par document : ~11 ms pour `example` et `flex`, ~77 ms pour `images` (PNG à lire et décoder).
 
 Pour reproduire :

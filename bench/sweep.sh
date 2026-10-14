@@ -5,6 +5,7 @@
 cd "$(dirname "$0")/.." || exit 1
 PORT=${PORT:-3456}
 RUNTIME=${RUNTIME:-node}
+export NODE_ENV=production  # React dev build: slower and heavier
 rss_mb() { ps -A -o rss=,ppid=,pid= | awk -v p=$pid '$2 == p || $3 == p { s += $1 } END { printf "%d", s / 1024 }'; }
 echo "runtime,workers,vus,req_s,p95_ms,fail_rate,peak_rss_mb"
 for w in ${@:-1 $(node -p 'os.availableParallelism()')}; do

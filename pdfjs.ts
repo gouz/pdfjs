@@ -140,8 +140,13 @@ export function htmlToPdf(html: string, {
       band(header, 'top'),
       h(Html, { renderers: r, style: text, children: html }),
       band(footer, 'bottom')));
-  return output ? renderToFile(doc, output).then(() => {}) : renderToBuffer(doc);
+  // One render at a time: rendering is CPU-bound, so interleaving N renders only keeps N documents in memory.
+  // ponytail: a render that never settles (hung remote image) blocks the queue, add a timeout if that bites.
+  const result: Promise<void | Buffer> = queue.then(() => (output ? renderToFile(doc, output).then(() => {}) : renderToBuffer(doc)));
+  queue = result.catch(() => {});
+  return result;
 }
+let queue: Promise<unknown> = Promise.resolve();
 
 // realpath: once installed, argv[1] is the node_modules/.bin/pdfjs symlink
 if (process.argv[1] && realpathSync(process.argv[1]) === import.meta.filename) {

@@ -23,7 +23,7 @@
     "demo": "for f in demo/*.html; do node pdfjs.ts \"$f\" \"${f%.html}.pdf\"; done",
     "bench:server": "node bench/server.ts",
     "bench": "k6 run bench/k6.ts",
-    "bench:sweep": "(sh bench/sweep.sh && RUNTIME=bun sh bench/sweep.sh | tail -n +2) > bench/results.csv && node bench/chart.ts",
+    "bench:sweep": "(sh bench/sweep.sh; RUNTIME=bun sh bench/sweep.sh | tail -n +2) > bench/results.csv && node bench/chart.ts",
     "build": "tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run typecheck && npm test",
     "prepack": "npm run build"
