@@ -8,11 +8,11 @@
     "demo": "for f in demo/*.html; do node html2pdf.js \"$f\" \"${f%.html}.pdf\"; done",
     "bench:server": "node bench/server.js",
     "bench": "k6 run bench/k6.js",
-    "bench:sweep": "sh bench/sweep.sh > bench/results.csv && node bench/chart.js"
+    "bench:sweep": "(sh bench/sweep.sh && RUNTIME=bun sh bench/sweep.sh | tail -n +2) > bench/results.csv && node bench/chart.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Sylvain Gougouzian",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "html2pdf": "html2pdf.js"
