@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, realpathSync } from
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Font } from '@react-pdf/renderer';
-import { htmlToPdf, imageSrc, registerFonts, renderers } from './pdfjs.ts';
+import { htmlToPdf, imageSrc, registerFonts, renderers, sanitizeCss } from './pdfjs.ts';
 
 const { div, img } = renderers();
 const el = (attributes: Record<string, string>) => ({ attributes });
@@ -46,6 +46,13 @@ registerFonts({ OneFile: 'one.ttf', WithItalic: [{ src: 'r.ttf' }, { src: 'i.ttf
 const styles = (f: string) => Font.getRegisteredFonts()[f].sources.map((s: any) => `${s.src}:${s.fontStyle}`).sort();
 assert.deepEqual(styles('OneFile'), ['one.ttf:italic', 'one.ttf:normal']);
 assert.deepEqual(styles('WithItalic'), ['i.ttf:italic', 'r.ttf:normal']);
+
+// sanitizeCss replaces border-width keywords that crash react-pdf
+assert.equal(sanitizeCss('border: medium solid #000'), 'border: 3px solid #000');
+assert.equal(sanitizeCss('border-width: thin'), 'border-width: 1px');
+assert.equal(sanitizeCss('border-top: thick dashed red'), 'border-top: 5px dashed red');
+assert.equal(sanitizeCss('border-bottom-width:medium'), 'border-bottom-width:3px');
+assert.equal(sanitizeCss('color: medium'), 'color: medium'); // unrelated property untouched
 
 // end to end, no output -> Buffer; header/footer page numbers
 const pdf = await htmlToPdf('<div style="display:flex;justify-content:space-between"><p>a</p><p>b</p></div>',
