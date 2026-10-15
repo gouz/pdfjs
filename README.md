@@ -76,6 +76,7 @@ await htmlToPdf(html, {
 - Une police enregistrée est aussi utilisable en CSS : `font-family: Georgia`.
 - Sans fichier gras ou italique, le texte en `<b>` / `<i>` s'affiche avec le fichier normal (pas de faux gras ni de faux italique).
 - `registerFonts(fonts)` est exporté pour enregistrer les polices une fois au démarrage.
+- Comme dans un navigateur, une pile `font-family: "Segoe UI", Roboto, sans-serif` prend la première police disponible : une police enregistrée, ou une police intégrée (`sans-serif`/`Arial` → Helvetica, `serif` → Times-Roman, `monospace` → Courier). Si aucune ne l'est, la déclaration est ignorée et la police par défaut s'applique.
 
 ### Images
 
@@ -102,7 +103,11 @@ Formats : PNG et JPEG. Les SVG doivent être écrits directement dans le HTML (`
 - Tableaux, listes, liens, `<svg>` inline.
 - `<style>` avec sélecteurs simples (balise, `.classe`, `#id`, descendants).
 
-**Non pris en charge** : CSS grid, `float`, `background-image`, pseudo-éléments (`::before`), `@media`, `@font-face` (utiliser `fonts`), feuilles de style externes `<link>`.
+**Non pris en charge** : CSS grid, `float`, `background-image`, pseudo-éléments (`::before`), `@media`, `@font-face` (utiliser `fonts`), feuilles de style externes `<link>`, variables CSS `var()`.
+
+**À savoir** :
+- Un texte qui déborde d'une hauteur fixe (`height`) n'est pas affiché, ou est tronqué avec `…`, alors qu'un navigateur le laisse dépasser. Préférer `min-height`.
+- Un `min-height` plus grand que la page est ramené à la hauteur de la page (sinon le rendu ne se termine jamais).
 
 ## Exemples
 

@@ -54,9 +54,29 @@ assert.equal(sanitizeCss('border-top: thick dashed red'), 'border-top: 5px dashe
 assert.equal(sanitizeCss('border-bottom-width:medium'), 'border-bottom-width:3px');
 assert.equal(sanitizeCss('color: medium'), 'color: medium'); // unrelated property untouched
 
+// font stacks fall through to a family react-pdf can draw, like a browser; none -> dropped (inherits)
+assert.equal(sanitizeCss(`font-family: "Segoe UI", Roboto, sans-serif;`), 'font-family: Helvetica;');
+assert.equal(sanitizeCss('font-family:&quot;Segoe UI&quot;, serif'), 'font-family: Times-Roman;');
+assert.equal(sanitizeCss('font-family: OneFile, monospace'), 'font-family: OneFile;'); // registered above
+assert.equal(sanitizeCss('font-family: Foo; color: red'), ' color: red');
+// `normal` gaps / spacings crash react-pdf, dropped
+assert.equal(sanitizeCss('gap: normal; letter-spacing:normal;color:red'), ' color:red');
+assert.equal(sanitizeCss('line-height: normal'), 'line-height: normal'); // supported, kept
+
+// min-heights taller than the page are capped (react-pdf would loop forever placing them)
+const section = renderers(undefined, 300).section;
+assert.equal(styleOf(section({ style: [{ minHeight: '400px' }], element: el({}) })).minHeight, 300);
+assert.equal(styleOf(section({ style: [{ minHeight: 200 }], element: el({}) })).minHeight, 200);
+assert.equal(styleOf(section({ style: [{ minHeight: '50%' }], element: el({}) })).minHeight, '50%');
+
 // end to end, no output -> Buffer; header/footer page numbers
 const pdf = await htmlToPdf('<div style="display:flex;justify-content:space-between"><p>a</p><p>b</p></div>',
   { size: 'A5', landscape: true, margin: { top: 60 }, footer: '<p>{page}/{pages}</p>', meta: { title: 'T' } });
 assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
 assert.match(pdf.toString('latin1'), /\(T\)/);
+
+// end to end: what used to crash or hang now renders, text content is left alone
+const robust = await htmlToPdf(`<style>p { font-family: "Segoe UI", sans-serif; letter-spacing: normal }</style>
+  <div style="display:flex;gap:normal;min-height:2000px"><p style="font-family:Foo">a</p></div><p>gap: normal</p>`, { size: [400, 300] });
+assert.equal(robust.subarray(0, 5).toString(), '%PDF-');
 console.log('ok');

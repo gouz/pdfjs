@@ -46,20 +46,63 @@ export interface PdfOptions {
   images?: ImageOptions;
 }
 
-/** Replace CSS values that crash react-pdf (e.g. border-width keywords). */
+// CSS generic / common families -> react-pdf's built-in fonts
+const fontAliases: Record<string, string> = {
+  'sans-serif': 'Helvetica', 'system-ui': 'Helvetica', '-apple-system': 'Helvetica', arial: 'Helvetica', helvetica: 'Helvetica',
+  serif: 'Times-Roman', times: 'Times-Roman', 'times new roman': 'Times-Roman',
+  monospace: 'Courier', courier: 'Courier', 'courier new': 'Courier',
+};
+// first family of the stack react-pdf can draw (it throws on an unregistered one, browsers fall through)
+const usableFont = (stack: string) => {
+  const registered = new Map(Font.getRegisteredFontFamilies().map((f) => [f.toLowerCase(), f]));
+  for (const name of stack.replaceAll('&quot;', '').split(',').map((f) => f.trim().replace(/^['"]|['"]$/g, '').toLowerCase()))
+    if (registered.has(name) || name in fontAliases) return registered.get(name) ?? fontAliases[name];
+};
+
+/**
+ * Rewrite CSS that react-pdf crashes on:
+ *   - border-width keywords -> px
+ *   - font-family stacks -> first usable family, dropped if none (inherits the default)
+ *   - `normal` gaps / spacings -> dropped (their default)
+ */
 const borderWidths: Record<string, string> = { thin: '1px', medium: '3px', thick: '5px' };
-export const sanitizeCss = (html: string) =>
-  html.replace(
-    /(border(?:-(?:top|right|bottom|left))?(?:-width)?\s*:\s*)(thin|medium|thick)\b/gi,
-    (_, prop: string, kw: string) => prop + borderWidths[kw.toLowerCase()],
-  );
+export const sanitizeCss = (css: string) =>
+  css
+    .replace(
+      /(border(?:-(?:top|right|bottom|left))?(?:-width)?\s*:\s*)(thin|medium|thick)\b/gi,
+      (_, prop: string, kw: string) => prop + borderWidths[kw.toLowerCase()],
+    )
+    .replace(/font-family\s*:\s*((?:&quot;|[^;}])+);?/gi, (_, stack: string) => {
+      const font = usableFont(stack);
+      return font ? `font-family: ${font};` : '';
+    })
+    .replace(/(?<![-\w])(?:gap|row-gap|column-gap|letter-spacing|word-spacing)\s*:\s*normal\s*(?:!important\s*)?;?/gi, '');
+
+// sanitizeCss on style="" attributes and <style> blocks only, text content stays untouched
+const sanitizeHtml = (html: string) =>
+  html
+    .replace(/(<style[^>]*>)([\s\S]*?)(<\/style>)/gi, (_, open: string, css: string, close: string) => open + sanitizeCss(css) + close)
+    .replace(/(\sstyle\s*=\s*)(["'])([\s\S]*?)\2/gi, (_, attr: string, q: string, css: string) => attr + q + sanitizeCss(css) + q);
 
 const merge = (style: unknown): Style => Object.assign({}, ...[style].flat());
 
 // CSS display:flex defaults to row, Yoga defaults to column.
 const flexRow = (style: RendererProps['style']) =>
   merge(style).display === 'flex' && !merge(style).flexDirection ? [...style, { flexDirection: 'row' as const }] : style;
-const block: Renderer = ({ style, children }) => h(View, { style: flexRow(style) }, children);
+// react-pdf loops forever on a min-height taller than the page content area (it can never place it), cap it there.
+// ponytail: only px/pt values are capped, em/vh/... pass through
+const capMinHeight = (style: RendererProps['style'], pageHeight: number) => {
+  const minHeight = merge(style).minHeight;
+  const pt = typeof minHeight === 'number' ? minHeight : /^[\d.]+(px|pt)?$/.test(String(minHeight)) ? parseFloat(minHeight) : NaN;
+  return pt > pageHeight ? [...style, { minHeight: pageHeight }] : style;
+};
+const block = (pageHeight = Infinity): Renderer => ({ style, children }) =>
+  h(View, { style: flexRow(capMinHeight(style, pageHeight)) }, children);
+
+// react-pdf's named sizes, in pt
+const pageSizes: Record<string, [number, number]> = {
+  A3: [841.89, 1190.55], A4: [595.28, 841.89], A5: [419.53, 595.28], LETTER: [612, 792], LEGAL: [612, 1008], TABLOID: [792, 1224],
+};
 
 /**
  * Resolve an <img src> under the image policy; null = blocked.
@@ -93,8 +136,9 @@ const naturalWidth = (src: string) => {
   }
 };
 
-export const renderers = (images?: ImageOptions): Record<string, Renderer> => ({
-  ...Object.fromEntries(['div', 'section', 'article', 'aside', 'header', 'footer', 'main', 'nav', 'form'].map((t) => [t, block])),
+/** pageHeight: height of the page content area in pt, min-heights above it are capped */
+export const renderers = (images?: ImageOptions, pageHeight?: number): Record<string, Renderer> => ({
+  ...Object.fromEntries(['div', 'section', 'article', 'aside', 'header', 'footer', 'main', 'nav', 'form'].map((t) => [t, block(pageHeight)])),
   img: ({ style, element: { attributes: a } }) => {
     const src = imageSrc(a.src, images);
     if (!src) return console.warn(`pdfjs: image blocked or not found: ${a.src}`), null;
@@ -130,8 +174,12 @@ export function htmlToPdf(html: string, {
   fonts, header, footer, meta = {}, images,
 }: PdfOptions = {}): Promise<void | Buffer> {
   if (fonts) registerFonts(fonts);
-  const r = renderers(images);
   const m = typeof margin === 'number' ? { top: margin, right: margin, bottom: margin, left: margin } : { top: 40, right: 40, bottom: 40, left: 40, ...margin };
+  // same lookup as react-pdf: landscape flips the size; unknown sizes stay uncapped
+  const [w, ht] = typeof size === 'string' ? pageSizes[size.toUpperCase()] ?? [] : typeof size === 'number' ? [size, size]
+    : Array.isArray(size) ? size : [size.width, size.height];
+  const pageHeight = Number(landscape ? w : ht) - m.top - m.bottom;
+  const r = renderers(images, Number.isNaN(pageHeight) ? undefined : pageHeight);
   const text = { fontFamily: font, fontSize };
 
   // header/footer: absolute in the page margin, re-rendered on every page for the page numbers
@@ -140,13 +188,13 @@ export function htmlToPdf(html: string, {
     style: { position: 'absolute', [edge]: 0, left: m.left, right: m.right, height: m[edge], justifyContent: 'center' },
     // react-pdf passes totalPages at runtime, its View typings only declare pageNumber
     render: ({ pageNumber, totalPages }: { pageNumber: number; totalPages?: number }) => h(Html, { renderers: r, style: text,
-      children: sanitizeCss(content.replaceAll('{page}', String(pageNumber)).replaceAll('{pages}', String(totalPages))) }),
+      children: sanitizeHtml(content.replaceAll('{page}', String(pageNumber)).replaceAll('{pages}', String(totalPages))) }),
   });
 
   const doc = h(Document, meta,
     h(Page, { size, orientation: landscape ? 'landscape' : 'portrait', style: { ...text, paddingTop: m.top, paddingRight: m.right, paddingBottom: m.bottom, paddingLeft: m.left } },
       band(header, 'top'),
-      h(Html, { renderers: r, style: text, children: sanitizeCss(html) }),
+      h(Html, { renderers: r, style: text, children: sanitizeHtml(html) }),
       band(footer, 'bottom')));
   // One render at a time: rendering is CPU-bound, so interleaving N renders only keeps N documents in memory.
   // ponytail: a render that never settles (hung remote image) blocks the queue, add a timeout if that bites.
