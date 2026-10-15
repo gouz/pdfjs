@@ -6,6 +6,8 @@ cd "$(dirname "$0")/.." || exit 1
 PORT=${PORT:-3456}
 RUNTIME=${RUNTIME:-node}
 export NODE_ENV=production  # React dev build: slower and heavier
+# cap V8's old space: live heap is ~40 MB, without a cap V8 grows to ~150 MB before collecting
+[ "$RUNTIME" = node ] && export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=128}"
 rss_mb() { ps -A -o rss=,ppid=,pid= | awk -v p=$pid '$2 == p || $3 == p { s += $1 } END { printf "%d", s / 1024 }'; }
 echo "runtime,workers,vus,req_s,p95_ms,fail_rate,peak_rss_mb"
 for w in ${@:-1 $(node -p 'os.availableParallelism()')}; do
