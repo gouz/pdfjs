@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+  <title>Facture {{ numero }}</title>
+  <style>
+    @page { size: A4; margin: 20mm; }
+    h1 { font-size: 24px; }
+    table { width: 100%; }
+    .row { display: flex; padding: 4px 0; border-bottom: 1px solid #ddd; }
+    .row > div { flex: 1; }
+    .num { text-align: right; }
+    .total { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Facture {{ numero }}</h1>
+  <p>{{ date | date('%A %e %B %Y') }}</p>
+  <p>{{ client.nom }}<br>{{ client.adresse | nl2br }}</p>
+  <div class="row total"><div>Désignation</div><div class="num">Qté</div><div class="num">Prix</div><div class="num">Total</div></div>
+  {% set total = 0 %}
+  {% for l in lignes %}
+  <div class="row"><div>{{ l.libelle }}</div><div class="num">{{ l.quantite | number }}</div><div class="num">{{ l.prix | money }}</div><div class="num">{{ (l.quantite * l.prix) | money }}</div></div>
+  {% set total = total + l.quantite * l.prix %}
+  {% endfor %}
+  <div class="row total"><div>Total HT</div><div></div><div></div><div class="num">{{ total | money }}</div></div>
+  {% if remise is defined %}<p>Remise : {{ remise | money }}</p>{% endif %}
+</body>
+</html>

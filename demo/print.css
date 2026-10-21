@@ -1,0 +1,3 @@
+:root { --brand: #0b6e4f; --muted: #6b7280; --gap: 12px; }
+h1 { color: var(--brand); font-size: 28px; }
+.muted { color: var(--muted); }

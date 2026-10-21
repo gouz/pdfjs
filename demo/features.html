@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <title>Fonctionnalités CSS</title>
+  <link rel="stylesheet" href="print.css">
+  <style>
+    @import "features-extra.css";
+    @page { size: A5; margin: 15mm 12mm; }
+    .cards { display: flex; gap: var(--gap); }
+    .card { flex: 1; padding: 12px; border: 1px solid var(--brand, black); border-radius: 6px; }
+    @media screen { .card { background: red; } }
+    .narrow { color: red; }
+    @media print and (max-width: 600px) { .narrow { color: var(--brand); } }
+  </style>
+</head>
+<body>
+  <h1>Fonctionnalités CSS</h1>
+  <p class="muted">Feuille liée (<code>&lt;link&gt;</code>), <code>@import</code>, <code>var()</code>, <code>@media print</code> et <code>@page</code> (A5, marges 15&nbsp;mm × 12&nbsp;mm).</p>
+  <div class="cards">
+    <div class="card"><b>16px</b> = 12pt, comme un navigateur.</div>
+    <div class="card"><b>var(--gap)</b> entre les cartes.</div>
+  </div>
+  <p class="narrow">En vert grâce à <code>@media print and (max-width: 600px)</code> : la page A5 fait moins de 600px de large.</p>
+  <p class="extra">Ce paragraphe est stylé par <code>features-extra.css</code>.</p>
+</body>
+</html>

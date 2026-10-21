@@ -20,18 +20,22 @@ npx pdfjs facture.html facture.pdf
 
 | Option | Exemple | |
 |---|---|---|
-| `--size` | `--size A5` | format de page (`A4` par défaut, `A3`, `LETTER`…) |
+| `--size` | `--size A5`, `--size 400x600` | format de page (`A4` par défaut, `A3`, `A6`, `B5`, `LETTER`…, ou `LARGEURxHAUTEUR` en pt) |
 | `--landscape` | | orientation paysage |
-| `--margin` | `--margin 30` | marges en pt (40 par défaut) |
+| `--margin` | `--margin 30`, `--margin '60 40 50 40'` | marges en pt (40 par défaut), ordre CSS haut droite bas gauche |
 | `--font` | `--font Georgia` | police par défaut |
 | `--font-size` | `--font-size 11` | taille par défaut (12) |
 | `--font-file` | `--font-file Georgia=./Georgia.ttf` | enregistre une police, répétable |
 | `--header` | `--header '<p>Rapport</p>'` | en-tête répété sur chaque page |
 | `--footer` | `--footer '<p>{page} / {pages}</p>'` | pied de page répété sur chaque page |
-| `--title` | `--title 'Facture 42'` | titre dans les métadonnées du PDF |
-| `--remote-images` | | autorise les images `http(s)` |
+| `--title` | `--title 'Facture 42'` | titre dans les métadonnées du PDF (sinon : la balise `<title>`) |
+| `--remote-images` | | autorise les images, feuilles de style et polices `http(s)` |
+| `--data` | `--data facture.json` | le fichier HTML devient un [template](#templates), rempli avec ces données |
+| `--locale` | `--locale en` | langue des filtres `money` / `number` / `date` (`fr` par défaut) |
 
-Les images locales sont autorisées depuis le dossier du fichier HTML (et ses sous-dossiers).
+Les images, feuilles de style et polices locales sont autorisées depuis le dossier du fichier HTML (et ses sous-dossiers).
+
+`size`, `landscape` et `margin` peuvent aussi venir du document : `@page { size: A5 landscape; margin: 10mm }` (`var()` accepté). Une option passée explicitement l'emporte sur `@page`.
 
 ## API
 
@@ -50,9 +54,9 @@ Toutes les options :
 ```ts
 await htmlToPdf(html, {
   output: 'rapport.pdf',          // sinon : Buffer
-  size: 'A4',                     // 'A3', 'LETTER'… ou [largeur, hauteur] en pt
-  landscape: false,
-  margin: 40,                     // ou { top: 60, right: 40, bottom: 50, left: 40 } (pt)
+  size: 'A4',                     // 'A3', 'LETTER', '400x600'… ou [largeur, hauteur] en pt (défaut : @page, sinon A4)
+  landscape: false,               // défaut : @page, sinon false
+  margin: 40,                     // ou '60 40 50 40', ou { top: 60, right: 40, bottom: 50, left: 40 } (pt ; défaut : @page, sinon 40)
   font: 'Helvetica',              // Helvetica, Times-Roman, Courier, ou une police de `fonts`
   fontSize: 12,
   fonts: {
@@ -65,8 +69,11 @@ await htmlToPdf(html, {
   },
   header: '<p style="color: gray">Rapport — confidentiel</p>',
   footer: '<p style="text-align: right">Page {page} / {pages}</p>',
-  meta: { title: 'Rapport', author: 'Moi', subject: '', keywords: '' },
-  images: { baseDir: './templates', remote: false },
+  meta: { title: 'Rapport', author: 'Moi', subject: '', keywords: '' }, // title : sinon la balise <title>
+  images: { baseDir: './templates', remote: false },                   // images, <link>, @import, @font-face
+  data: { numero: 42 },           // le HTML (et header / footer) devient un template, voir Templates
+  locale: 'fr',                   // filtres money / number / date
+  templates: './templates',       // dossier lu par {% extends %} / {% include %}
 });
 ```
 
@@ -77,6 +84,43 @@ await htmlToPdf(html, {
 - Sans fichier gras ou italique, le texte en `<b>` / `<i>` s'affiche avec le fichier normal (pas de faux gras ni de faux italique).
 - `registerFonts(fonts)` est exporté pour enregistrer les polices une fois au démarrage.
 - Comme dans un navigateur, une pile `font-family: "Segoe UI", Roboto, sans-serif` prend la première police disponible : une police enregistrée, ou une police intégrée (`sans-serif`/`Arial` → Helvetica, `serif` → Times-Roman, `monospace` → Courier). Si aucune ne l'est, la déclaration est ignorée et la police par défaut s'applique.
+
+### Templates
+
+Avec `data`, le HTML est un template [Nunjucks](https://mozilla.github.io/nunjucks/) (syntaxe Jinja / Twig, comme les templates MiniJinja de [pdfrs](https://github.com/gouz/pdfrs)), rempli avant le rendu. `header` et `footer` aussi (`{page}` / `{pages}` restent remplacés à chaque page).
+
+```ts
+await htmlToPdf(readFileSync('templates/facture.html', 'utf8'), {
+  data: { numero: '2026-0142', client: { nom: 'ACME' }, lignes: [{ libelle: 'Café', quantite: 2, prix: 3 }] },
+  templates: './templates', // pour {% extends "base.html" %} / {% include "parts/adresse.html" %}
+  locale: 'fr',
+});
+// ou seulement le texte : fillTemplate(template, data, { locale, templates })
+```
+
+```bash
+npx pdfjs demo/templates/facture.html facture.pdf --data demo/templates/facture.json   # templates : le dossier du fichier
+```
+
+- **Syntaxe** : `{{ client.nom }}`, `{% for l in lignes %}…{% endfor %}`, `{% if remise is defined %}`, `{% set total = total + l.prix %}`, `loop.index`, `{# commentaires #}`, macros et les [filtres de Nunjucks](https://mozilla.github.io/nunjucks/templating.html#builtin-filters) (`default`, `length`, `round`, `sum`, `upper`, `join`, `sort`, `groupby`, `dump`…).
+- **Strict** : une variable absente des données est une erreur, une faute de frappe n'imprime pas une facture vide. Champs optionnels : `{{ client.tva | default("") }}`, `{% if client.tva is defined %}`.
+- **Échappé** : chaque `{{ … }}` est échappé en HTML. `| safe` le désactive, pour du HTML de confiance uniquement.
+- **Borné au dossier** : `{% extends %}` / `{% include %}` ne lisent que les fichiers de `templates` (pas de `../`, chemin absolu ou lien symbolique qui en sort).
+- **Pas de bac à sable** : contrairement à pdfrs, pas de limite de temps (une boucle sans fin bloque le rendu), et Nunjucks n'est pas conçu pour des templates hostiles. Les templates doivent venir d'une source de confiance ; les données, elles, peuvent être quelconques.
+
+Filtres pour les documents commerciaux, identiques à pdfrs :
+
+| Filtre | `fr` | `en` |
+|---|---|---|
+| `{{ 1234.5 \| money }}` | `1 234,50 €` | `€1,234.50` |
+| `{{ 99 \| money("USD") }}` | `99,00 $` | `$99.00` |
+| `{{ total \| money(decimals=0) }}` | `1 235 €` | `€1,235` |
+| `{{ 1234.5 \| number }}` / `number(2)` | `1 235` / `1 234,50` | `1,235` / `1,234.50` |
+| `{{ "2026-10-15" \| date }}` | `15/10/2026` | `10/15/2026` |
+| `{{ "2026-10-15" \| date("%A %e %B %Y") }}` | `jeudi 15 octobre 2026` | `Thursday 15 October 2026` |
+| `{{ adresse \| nl2br }}` | retours à la ligne en `<br>`, échappé | |
+
+Montants arrondis au demi supérieur en valeur absolue (`2.675` → `2,68`), dates au format `YYYY-MM-DD` avec heure optionnelle (`2026-10-15T08:30:00Z`, `%H:%M`), `locale="…"` sur un filtre remplace celle du rendu. Locales : `fr`, `en`, `de`, `es`, `it`, `fr-CH`… (séparateurs ; noms de mois et de jours en français ou en anglais). En `fr`, le séparateur des milliers est une espace insécable (U+00A0) et pas l'espace fine de pdfrs (U+202F), que les polices intégrées n'ont pas.
 
 ### Images
 
@@ -91,19 +135,26 @@ Le HTML peut venir d'une source non fiable, donc **par défaut seules les images
 
 Une image refusée ou introuvable n'est pas affichée et un avertissement est écrit dans la console.
 
-Comme dans un navigateur, une image sans taille garde sa taille naturelle (1 px = 1 pt), sans dépasser la largeur disponible. `width` / `height` (attributs ou CSS) sont respectés, avec conservation des proportions si un seul est donné.
+Comme dans un navigateur, une image sans taille garde sa taille naturelle (1 px = 0,75 pt), sans dépasser la largeur disponible. `width` / `height` (attributs ou CSS) sont respectés, avec conservation des proportions si un seul est donné.
 
 Formats : PNG et JPEG. Les SVG doivent être écrits directement dans le HTML (`<svg>…</svg>`), pas via `<img>`.
 
 ## CSS pris en charge
+
+Comme dans un navigateur, **1 px = 0,75 pt** (96 px par pouce), dans le CSS comme dans les attributs `width` / `height`. Une longueur sans unité est en pt.
 
 - **Flexbox** complet : `flex-direction`, `justify-content`, `align-items`, `align-self`, `flex-grow`/`flex-shrink`/`flex-basis`, `flex-wrap`, `gap`.
 - Boîtes : `width`/`height` (+ `min`/`max`), `margin`, `padding`, `border`, `border-radius`, `background-color`, `position: absolute`.
 - Texte : `font-family`, `font-size`, `font-weight`, `font-style`, `color`, `text-align`, `line-height`, `text-decoration`, `text-transform`, `letter-spacing`.
 - Tableaux, listes, liens, `<svg>` inline.
 - `<style>` avec sélecteurs simples (balise, `.classe`, `#id`, descendants).
+- **Variables** : `--nom: valeur` et `var(--nom, repli)`, imbriquées. Elles sont globales : la dernière déclaration l'emporte, quel que soit son sélecteur.
+- **`@media`** : `print` / `all` s'appliquent, `screen` non. Sont aussi gérés `min-` / `max-width` / `-height`, la syntaxe `(width >= 600px)`, `orientation`, `not` et les listes, tous évalués sur la zone imprimable de la page. Même règle pour `<style media="…">` et `<link media="…">`. `@supports` et `@layer` sont toujours appliqués.
+- **`@page`** : `size` (`A5`, `A4 landscape`, `210mm 297mm`) et `margin`. `:first`, `:left` / `:right` et les boîtes de marge sont ignorés : utiliser `header` / `footer`.
+- **Feuilles externes** : `<link rel="stylesheet" href="…">` et `@import`, avec la même règle que les images (`images.baseDir`, ou `images.remote`). Les `url()` d'une feuille importée sont résolues depuis `baseDir`.
+- **`@font-face`** : `font-family`, `src` (`data:`, fichier local ou URL suivant la même règle ; le premier `src` qui n'est pas en `.woff2`), `font-weight`, `font-style`. La police est enregistrée globalement, comme avec `fonts`.
 
-**Non pris en charge** : CSS grid, `float`, `background-image`, pseudo-éléments (`::before`), `@media`, `@font-face` (utiliser `fonts`), feuilles de style externes `<link>`, variables CSS `var()`.
+**Non pris en charge** : CSS grid, `float`, `background-image`, pseudo-éléments (`::before`), `calc()`, compteurs, boîtes de marge `@page`. Pour tout ça, voir [pdfrs](https://github.com/gouz/pdfrs).
 
 **À savoir** :
 - Un texte qui déborde d'une hauteur fixe (`height`) n'est pas affiché, ou est tronqué avec `…`, alors qu'un navigateur le laisse dépasser. Préférer `min-height`.
@@ -116,11 +167,14 @@ Formats : PNG et JPEG. Les SVG doivent être écrits directement dans le HTML (`
 | [`demo/example.html`](demo/example.html) | [`demo/example.pdf`](demo/example.pdf) | facture simple |
 | [`demo/flex.html`](demo/flex.html) | [`demo/flex.pdf`](demo/flex.pdf) | flexbox |
 | [`demo/images.html`](demo/images.html) | [`demo/images.pdf`](demo/images.pdf) | images (l'image distante est bloquée par défaut, ajouter `--remote-images`) |
+| [`demo/features.html`](demo/features.html) + [`print.css`](demo/print.css) | [`demo/features.pdf`](demo/features.pdf) | `<link>`, `@import`, `var()`, `@media print`, `@page` A5 |
+| [`demo/templates/facture.html`](demo/templates/facture.html) + [`.json`](demo/templates/facture.json) | [`demo/facture.pdf`](demo/facture.pdf) | template : boucle, total, filtres `money` / `number` / `date` / `nl2br` |
 
 Pour régénérer les rendus :
 
 ```bash
 npm run demo
+node pdfjs.ts demo/templates/facture.html demo/facture.pdf --data demo/templates/facture.json
 ```
 
 ## Performances

@@ -1,0 +1,10 @@
+{
+  "numero": "2026-0142",
+  "date": "2026-10-15",
+  "client": { "nom": "ACME", "adresse": "12 rue des Lilas\n75011 Paris" },
+  "lignes": [
+    { "libelle": "Café", "quantite": 2, "prix": 3 },
+    { "libelle": "Développement", "quantite": 12, "prix": 650 },
+    { "libelle": "Hébergement", "quantite": 1, "prix": 1234.5 }
+  ]
+}

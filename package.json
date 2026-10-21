@@ -50,11 +50,13 @@
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
     "image-size": "^2.0.4",
+    "nunjucks": "^3.2.4",
     "react": "^19.3.0",
     "react-pdf-html": "^2.1.5"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "@types/nunjucks": "^3.2.6",
     "@types/react": "^19.3.0",
     "typescript": "^7.0.2"
   },
