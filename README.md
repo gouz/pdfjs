@@ -179,7 +179,7 @@ node pdfjs.ts demo/templates/facture.html demo/facture.pdf --data demo/templates
 
 ## Performances
 
-Mesuré avec [k6](https://k6.io) via un petit serveur HTTP (`bench/server.ts` : POST du HTML, réponse en PDF), sur les trois documents de `demo/` en alternance. Machine : Apple Silicon 8 cœurs (6 performance + 2 efficacité), Node 26.11, Bun 1.4, k6 2.3 sur la même machine, pdfjs 1.1.0 avec les fonctions portées de pdfrs (`var()`, `@media`, `@page`, templates…). `NODE_ENV=production`, Node lancé avec `--max-old-space-size=128`. Chaque palier dure 15 s ; la mémoire est le pic de RSS du serveur (tous ses process) pendant le palier.
+Mesuré avec [k6](https://k6.io) via un petit serveur HTTP (`bench/server.ts` : POST du HTML, réponse en PDF), sur les trois documents de `demo/` en alternance. Machine : Apple Silicon 8 cœurs (6 performance + 2 efficacité), Node 26.11, Bun 1.4, k6 2.3 sur la même machine, pdfjs 2.0.0 (avec les fonctions portées de pdfrs : `var()`, `@media`, `@page`, templates…). `NODE_ENV=production`, Node lancé avec `--max-old-space-size=128`. Chaque palier dure 15 s ; la mémoire est le pic de RSS du serveur (tous ses process) pendant le palier.
 
 ![Débit selon le nombre d'utilisateurs simultanés : Node × 8 monte à ~1 050 PDF/s, les autres configurations plafonnent entre 240 et 300 PDF/s](bench/chart.svg)
 
